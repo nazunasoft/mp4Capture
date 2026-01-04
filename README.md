@@ -7,4 +7,4 @@
 <img width="1101" height="507" alt="screenshot" src="https://github.com/user-attachments/assets/b3295854-757f-445a-896c-a7358eaac212" />
 
 ## 使い方
- - mp4_capture.htmlをchromeなどのブラウザで開いてください。 
+ - mp4_capture.htmlをPCのデスクトップなどにダウンロードし、chromeなどのブラウザで開いてください。 
