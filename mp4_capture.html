@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MP4キャプチャー</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: rgba(255, 255, 255, .06);
+      --panel2: rgba(255, 255, 255, .10);
+      --border: rgba(255, 255, 255, .14);
+      --text: rgba(255, 255, 255, .92);
+      --muted: rgba(255, 255, 255, .65);
+      --accent: #6ea8ff;
+      --accent2: #8b5cf6;
+      --danger: #ff6b6b;
+      --shadow: 0 16px 50px rgba(0, 0, 0, .35);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 600px at 20% 10%, rgba(110, 168, 255, .25), transparent 60%),
+        radial-gradient(1000px 600px at 80% 0%, rgba(139, 92, 246, .22), transparent 55%),
+        radial-gradient(900px 600px at 50% 90%, rgba(34, 197, 94, .10), transparent 60%),
+        var(--bg);
+      min-height: 100vh;
+      padding: 28px 18px 50px;
+    }
+
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      align-items: baseline;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-size: 20px;
+      letter-spacing: .02em;
+      margin: 0;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 980px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel), rgba(255, 255, 255, .04));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card .inner {
+      padding: 16px;
+    }
+
+    .card-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, .08);
+      background: rgba(255, 255, 255, .03);
+    }
+
+    .card-title .label {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .pill {
+      font-size: 12px;
+      color: rgba(255, 255, 255, .8);
+      border: 1px solid rgba(255, 255, 255, .14);
+      background: rgba(255, 255, 255, .06);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    /* Drop zone */
+    .drop {
+      position: relative;
+      border: 1px dashed rgba(255, 255, 255, .22);
+      background: rgba(255, 255, 255, .03);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      transition: .18s ease;
+    }
+
+    .drop.dragover {
+      border-color: rgba(110, 168, 255, .75);
+      background: rgba(110, 168, 255, .10);
+      transform: translateY(-1px);
+    }
+
+    .drop .icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(110, 168, 255, .35), rgba(139, 92, 246, .25));
+      border: 1px solid rgba(255, 255, 255, .12);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+
+    .drop .text {
+      min-width: 0;
+    }
+
+    .drop .text .big {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .drop .text .small {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .drop input[type="file"] {
+      display: none;
+    }
+
+    .btnrow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    button,
+    .btn {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, .14);
+      background: rgba(255, 255, 255, .06);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: .18s ease;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button:hover,
+    .btn:hover {
+      background: rgba(255, 255, 255, .10);
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .primary {
+      border-color: rgba(110, 168, 255, .45);
+      background: linear-gradient(135deg, rgba(110, 168, 255, .18), rgba(139, 92, 246, .14));
+    }
+
+    .primary:hover {
+      background: linear-gradient(135deg, rgba(110, 168, 255, .26), rgba(139, 92, 246, .20));
+    }
+
+    .danger {
+      border-color: rgba(255, 107, 107, .45);
+    }
+
+    .meta {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+    }
+
+    .meta strong {
+      color: rgba(255, 255, 255, .86);
+      font-weight: 600;
+    }
+
+    video {
+      width: 100%;
+      background: #000;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, .10);
+    }
+
+    .preview {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #preview-box {
+      position: relative;
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, .10);
+      background: rgba(255, 255, 255, .03);
+      overflow: hidden;
+    }
+
+    #preview-placeholder {
+      aspect-ratio: 16 / 9;
+      display: grid;
+      place-items: center;
+      color: rgba(255, 255, 255, .55);
+      font-size: 14px;
+      letter-spacing: .04em;
+    }
+
+    #my-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: none;
+      /* キャプチャーするまで非表示 */
+    }
+
+    .toast {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      min-height: 18px;
+    }
+
+    .toast.error {
+      color: rgba(255, 107, 107, .95);
+    }
+
+    .toast.ok {
+      color: rgba(110, 255, 180, .92);
+    }
+
+    canvas {
+      display: none;
+    }
+
+    a {
+      color: inherit;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <h1>MP4キャプチャー</h1>
+      <p class="sub">任意の再生位置をPNGで切り出し（ファイル名：元動画名＋再生時間）</p>
+    </header>
+
+    <div class="grid">
+      <!-- Left: Video & Controls -->
+      <section class="card">
+        <div class="card-title">
+          <div class="label">
+            <span class="pill">1</span>
+            <span>動画</span>
+          </div>
+          <span id="video-name" class="pill">未選択</span>
+        </div>
+        <div class="inner">
+          <div id="dropzone" class="drop" tabindex="0" role="button" aria-label="MP4をドロップまたはクリックで選択">
+            <div class="icon" aria-hidden="true">
+              <!-- simple arrow icon -->
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M12 3v12" stroke="rgba(255,255,255,.85)" stroke-width="2" stroke-linecap="round" />
+                <path d="M7 10l5 5 5-5" stroke="rgba(255,255,255,.85)" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M4 20h16" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-linecap="round" />
+              </svg>
+            </div>
+            <div class="text">
+              <p class="big">MP4をここにドロップ（またはクリックして選択）</p>
+              <p class="small">ヒント：動画を読み込んだら、シークして「キャプチャー」を押すだけ。</p>
+            </div>
+            <input id="file-input" type="file" accept="video/mp4">
+          </div>
+
+          <div style="margin-top:12px">
+            <video id="my-video" controls playsinline></video>
+          </div>
+
+          <div class="btnrow">
+            <button id="capture-btn" class="primary" disabled>
+              <!-- camera icon -->
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9 7l1.5-2h3L15 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3z"
+                  stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linejoin="round" />
+                <circle cx="12" cy="13" r="3" stroke="rgba(255,255,255,.9)" stroke-width="2" />
+              </svg>
+              キャプチャー（PNG）
+            </button>
+
+            <button id="download-btn" disabled>
+              <!-- download icon -->
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 3v10" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round" />
+                <path d="M8 10l4 4 4-4" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <path d="M5 21h14" stroke="rgba(255,255,255,.55)" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              ダウンロード
+            </button>
+
+            <button id="clear-btn" class="danger" disabled>
+              クリア
+            </button>
+          </div>
+
+          <div class="meta">
+            <span>再生位置：<strong id="time-label">--:--.---</strong></span>
+            <span>出力名：<strong id="filename-label">-</strong></span>
+          </div>
+
+          <div id="toast" class="toast"></div>
+        </div>
+      </section>
+
+      <!-- Right: Preview -->
+      <aside class="card">
+        <div class="card-title">
+          <div class="label">
+            <span class="pill">2</span>
+            <span>プレビュー</span>
+          </div>
+          <span class="pill">PNG</span>
+        </div>
+        <div class="inner">
+          <div id="preview-box">
+            <div id="preview-placeholder">画像表示エリア</div>
+            <img id="my-img" draggable="true" alt="キャプチャー画像プレビュー">
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <canvas id="my-canvas"></canvas>
+  </div>
+
+  <script>
+    const video = document.getElementById('my-video');
+    const canvas = document.getElementById('my-canvas');
+    const img = document.getElementById('my-img');
+
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+
+    const captureBtn = document.getElementById('capture-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const clearBtn = document.getElementById('clear-btn');
+
+    const toast = document.getElementById('toast');
+    const timeLabel = document.getElementById('time-label');
+    const filenameLabel = document.getElementById('filename-label');
+    const videoNamePill = document.getElementById('video-name');
+
+    let lastPngDataUrl = "";
+    let originalFileName = "video"; // 拡張子なし
+    let capturedFileName = "";
+    let objectUrl = null; // 解放用
+
+    // ---- UI helpers
+    function setToast(msg, type = "") {
+      toast.className = "toast" + (type ? " " + type : "");
+      toast.textContent = msg || "";
+    }
+
+    function sanitizeBaseName(name) {
+      // ファイル名として危ない文字を置換（Windows想定）
+      return name.replace(/[\\\/:*?"<>|]/g, "_").trim() || "video";
+    }
+
+    function formatTimeForFilename(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      const ms = Math.floor((sec % 1) * 1000);
+      return (
+        String(m).padStart(2, '0') + "_" +
+        String(s).padStart(2, '0') + "_" +
+        String(ms).padStart(3, '0')
+      );
+    }
+
+    function formatTimeLabel(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      const ms = Math.floor((sec % 1) * 1000);
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+    }
+
+    function currentOutputFileName() {
+      const t = formatTimeForFilename(video.currentTime || 0);
+      return `${originalFileName}_${t}.png`;
+    }
+
+    function updateTimeUi() {
+      const t = video.currentTime || 0;
+      timeLabel.textContent = formatTimeLabel(t);
+      filenameLabel.textContent = currentOutputFileName();
+    }
+
+    function enableControls(ready) {
+      captureBtn.disabled = !ready;
+      clearBtn.disabled = !ready;
+      // downloadはキャプチャ後に有効化
+      if (!ready) downloadBtn.disabled = true;
+    }
+
+    // ---- Load video from File
+    function loadVideoFile(file) {
+      if (!file) return;
+
+      if (file.type !== "video/mp4") {
+        setToast("MP4ファイルを選択してください。", "error");
+        return;
+      }
+
+      // 元動画名（拡張子なし）
+      originalFileName = sanitizeBaseName(file.name.replace(/\.[^/.]+$/, ""));
+      videoNamePill.textContent = originalFileName + ".mp4";
+
+      // 古いObjectURLを解放
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = URL.createObjectURL(file);
+      video.src = objectUrl;
+
+      lastPngDataUrl = "";
+      img.removeAttribute("src");
+      img.style.display = "none";
+      enableControls(true);
+      setToast("動画を読み込みました。シークしてキャプチャーできます。", "ok");
+      updateTimeUi();
+    }
+
+    // ---- Drag & Drop behaviors
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('keydown', (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
+
+    ['dragenter', 'dragover'].forEach(ev => {
+      dropzone.addEventListener(ev, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(ev => {
+      dropzone.addEventListener(ev, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('dragover');
+      });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      const file = e.dataTransfer.files && e.dataTransfer.files[0];
+      loadVideoFile(file);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      loadVideoFile(file);
+      e.target.value = '';
+    });
+
+    // ---- Capture
+    captureBtn.addEventListener('click', () => {
+      if (!video.videoWidth || !video.videoHeight) {
+        setToast("動画のメタデータ読込後にキャプチャーしてください（再生/シークしてから）。", "error");
+        return;
+      }
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext('2d', { alpha: true });
+      ctx.drawImage(video, 0, 0);
+
+      lastPngDataUrl = canvas.toDataURL('image/png');
+      img.src = lastPngDataUrl;
+      img.style.display = "block";
+      // キャプチャ時点の名前を確定
+      capturedFileName = currentOutputFileName();
+
+      downloadBtn.disabled = false;
+      updateTimeUi();
+      setToast("キャプチャーしました。ダウンロードできます。", "ok");
+    });
+
+    // ---- Download
+    downloadBtn.addEventListener('click', () => {
+      if (!lastPngDataUrl) {
+        setToast("先にキャプチャーしてください。", "error");
+        return;
+      }
+
+      const fileName = capturedFileName || currentOutputFileName();
+      const a = document.createElement('a');
+      a.href = lastPngDataUrl;
+      a.download = fileName;
+      a.click();
+      a.remove();
+
+      setToast(`保存名：${fileName}`, "ok");
+    });
+
+    // ---- Clear
+    clearBtn.addEventListener('click', () => {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      objectUrl = null;
+
+      lastPngDataUrl = "";
+      originalFileName = "video";
+      videoNamePill.textContent = "未選択";
+      img.removeAttribute("src");
+      img.style.display = "none";
+
+      enableControls(false);
+      updateTimeUi();
+      filenameLabel.textContent = "-";
+      setToast("クリアしました。", "");
+    });
+
+    img.addEventListener('dragstart', (e) => {
+      if (!lastPngDataUrl) return;
+
+      const name = capturedFileName || currentOutputFileName();
+
+      // macOS / Windows 両対応
+      e.dataTransfer.setData('DownloadURL',
+        `image/png:${name}:${lastPngDataUrl}`
+      );
+    });
+
+    // ---- Time UI updates
+    video.addEventListener('timeupdate', updateTimeUi);
+    video.addEventListener('seeked', updateTimeUi);
+    video.addEventListener('loadedmetadata', () => {
+      enableControls(true);
+      updateTimeUi();
+    });
+
+    // initial
+    enableControls(false);
+    updateTimeUi();
+  </script>
+</body>
+
+</html>
